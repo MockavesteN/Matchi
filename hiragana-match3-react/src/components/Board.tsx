@@ -9,7 +9,7 @@ import {
   collapseAndRefill,
   hasLegalMove
 } from "../game/BoardLogic";
-import { kanaSetLevel1 } from "../data/kanaSets
+import { kanaSetLevel1 } from "../data/kanaSets";
 import { words, wordsMap, WordInfo } from "../data/words";
 import WordPopup from "./WordPopup";
 
@@ -29,6 +29,8 @@ export default function Board({ rows, cols }: Props) {
   const [board, setBoard] = useState<TileType[][]>([]);
   const [selected, setSelected] = useState<Coord | null>(null);
   const [foundWord, setFoundWord] = useState<WordInfo | null>(null);
+  const [overlay, setOverlay] = useState<{ word: string; meaning: string } | null>(null);
+  const [pendingBoard, setPendingBoard] = useState<TileType[][] | null>(null);
 
   const [trie] = useState<TrieNode>(() => {
     const t = new TrieNode();
@@ -112,7 +114,7 @@ export default function Board({ rows, cols }: Props) {
     }
 
     const word = matches[0].map(([mr, mc]) => newBoard[mr][mc].kana).join("");
-    const meaning = wordMeanings[word] || "";
+    const meaning = wordsMap[word]?.meaning || "";
 
     setBoard(newBoard);
     setPendingBoard(postBoard);
@@ -124,7 +126,8 @@ export default function Board({ rows, cols }: Props) {
     <>
       {foundWord && (
         <WordPopup info={foundWord} onClose={() => setFoundWord(null)} />
-    <div className="relative inline-block">
+      )}
+      <div className="relative inline-block">
       <div
         className="inline-grid"
         style={{
@@ -162,22 +165,6 @@ export default function Board({ rows, cols }: Props) {
           }}
         />
       )}
-      <div
-        className="inline-grid"
-        style={{
-          gridTemplateColumns: `repeat(${cols}, 3.25rem)`
-        }}
-      >
-        {board.map((row, r) =>
-          row.map((tile, c) => (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              onClick={() => handleClick(r, c)}
-              selected={selected?.r === r && selected?.c === c}
-            />
-          ))
-        )}
       </div>
     </>
   );
