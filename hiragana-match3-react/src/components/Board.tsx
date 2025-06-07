@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Tile from "./Tile";
 import TrieNode from "../game/Trie";
 import {
@@ -12,10 +12,12 @@ import {
 import { kanaSetLevel1 } from "../data/kanaSets";
 import { words } from "../data/words";
 import { Tile as TileType } from "../types";
+import KanjiPop from "../animations/KanjiPop";
 
 interface Props {
   rows: number;
   cols: number;
+  onScore?: (delta: number) => void;
 }
 
 interface Coord {
@@ -23,9 +25,11 @@ interface Coord {
   c: number;
 }
 
-export default function Board({ rows, cols }: Props) {
+export default function Board({ rows, cols, onScore }: Props) {
   const [board, setBoard] = useState<TileType[][]>([]);
   const [selected, setSelected] = useState<Coord | null>(null);
+  const [popWord, setPopWord] = useState<string | null>(null);
+  const matchSoundRef = useRef<HTMLAudioElement | null>(null);
   const [trie] = useState<TrieNode>(() => {
     const t = new TrieNode();
     for (const w of words) t.insert(w);
@@ -37,6 +41,10 @@ export default function Board({ rows, cols }: Props) {
     const init = generateBoard(rows, cols, kanaSetLevel1, trie);
     setBoard(init);
   }, [rows, cols, trie]);
+
+  useEffect(() => {
+    matchSoundRef.current = new Audio("/sounds/pon.mp3");
+  }, []);
 
   const handleClick = (r: number, c: number) => {
     if (!board.length) return;
@@ -66,6 +74,23 @@ export default function Board({ rows, cols }: Props) {
       setSelected(null);
       return;
     }
+
+    const wordsMatched = matches.map(group =>
+      group.map(([mr, mc]) => newBoard[mr][mc].kana).join("")
+    );
+
+    if (matchSoundRef.current) {
+      matchSoundRef.current.currentTime = 0;
+      matchSoundRef.current.play();
+    }
+
+    if (wordsMatched[0]) {
+      setPopWord(wordsMatched[0]);
+      setTimeout(() => setPopWord(null), 800);
+    }
+
+    const delta = wordsMatched.reduce((sum, w) => sum + w.length, 0);
+    if (delta > 0 && onScore) onScore(delta);
 
     // Clear matches
     const cleared = Array.from({ length: rows }, () =>
@@ -110,9 +135,10 @@ export default function Board({ rows, cols }: Props) {
     <div
       className="inline-grid"
       style={{
-        gridTemplateColumns: \`repeat(\${cols}, 3.25rem)\`
+        gridTemplateColumns: `repeat(${cols}, 3.25rem)`
       }}
     >
+      {popWord && <KanjiPop text={popWord} />}
       {board.map((row, r) =>
         row.map((tile, c) => (
           <Tile
