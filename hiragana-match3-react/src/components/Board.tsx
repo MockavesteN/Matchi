@@ -51,6 +51,13 @@ export default function Board({ rows, cols, mode }: Props) {
     if (matchCount >= 10) setKanaPower(true);
   }, [matchCount]);
 
+  useEffect(() => {
+    if (overlay) {
+      new Audio("/sounds/pon.mp3").play();
+      confetti({ particleCount: 70, spread: 90, origin: { y: 0.6 } });
+    }
+  }, [overlay]);
+
   const [trie] = useState<TrieNode>(() => {
     const t = new TrieNode();
     for (const w of words) t.insert(w);
