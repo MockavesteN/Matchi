@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import confetti from "canvas-confetti";
 import Tile from "./Tile";
 import MeaningOverlay from "./MeaningOverlay";
 import TrieNode from "../game/Trie";
@@ -31,6 +32,13 @@ export default function Board({ rows, cols }: Props) {
   const [foundWord, setFoundWord] = useState<WordInfo | null>(null);
   const [overlay, setOverlay] = useState<{ word: string; meaning: string } | null>(null);
   const [pendingBoard, setPendingBoard] = useState<TileType[][] | null>(null);
+
+  useEffect(() => {
+    if (overlay) {
+      new Audio("/sounds/pon.mp3").play();
+      confetti({ particleCount: 70, spread: 90, origin: { y: 0.6 } });
+    }
+  }, [overlay]);
 
   const [trie] = useState<TrieNode>(() => {
     const t = new TrieNode();

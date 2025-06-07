@@ -5,5 +5,5 @@
 
 /* custom styles */
 .tile {
-  @apply flex items-center justify-center text-3xl font-bold rounded-lg shadow-md cursor-pointer select-none;
+  @apply flex items-center justify-center text-3xl font-bold rounded-lg shadow-lg cursor-pointer select-none;
 }
