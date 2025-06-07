@@ -2,12 +2,23 @@
 import TrieNode from "./Trie";
 import { Tile } from "../types";
 
+export const tileColors = [
+  "bg-pink-400",
+  "bg-yellow-300",
+  "bg-green-400",
+  "bg-blue-400",
+  "bg-purple-400",
+  "bg-orange-300",
+  "bg-red-400",
+];
+
 /**
  * Generate a random tile from kana set.
  */
 export function randomTile(kanaSet: string[], markNew = false): Tile {
   const kana = kanaSet[Math.floor(Math.random() * kanaSet.length)];
-  return { kana, id: crypto.randomUUID(), isNew: markNew };
+  const color = tileColors[Math.floor(Math.random() * tileColors.length)];
+  return { kana, id: crypto.randomUUID(), isNew: markNew, color };
 }
 
 /**
@@ -191,4 +202,47 @@ export function collapseAndRefill(
     }
   }
   return board;
+}
+
+/** Clear a specific row and refill */
+export function clearRow(
+  board: Tile[][],
+  row: number,
+  kanaSet: string[]
+): Tile[][] {
+  const rows = board.length;
+  const cols = board[0].length;
+  const cleared = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let c = 0; c < cols; c++) cleared[row][c] = true;
+  return collapseAndRefill(board, cleared, kanaSet);
+}
+
+/** Clear a specific column and refill */
+export function clearColumn(
+  board: Tile[][],
+  col: number,
+  kanaSet: string[]
+): Tile[][] {
+  const rows = board.length;
+  const cols = board[0].length;
+  const cleared = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let r = 0; r < rows; r++) cleared[r][col] = true;
+  return collapseAndRefill(board, cleared, kanaSet);
+}
+
+/** Clear all tiles containing the given kana and refill */
+export function clearKana(
+  board: Tile[][],
+  kana: string,
+  kanaSet: string[]
+): Tile[][] {
+  const rows = board.length;
+  const cols = board[0].length;
+  const cleared = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c].kana === kana) cleared[r][c] = true;
+    }
+  }
+  return collapseAndRefill(board, cleared, kanaSet);
 }
