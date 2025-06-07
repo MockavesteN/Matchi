@@ -27,9 +27,29 @@ export function generateBoard(
       Array.from({ length: cols }, () => randomTile(kanaSet))
     );
     safety++;
+
+    const foundWords = findWords(board, trie);
+    if (foundWords.length > 0) {
+      console.log("Board generation found words:", foundWords.map(group =>
+        group.map(([r, c]) => board[r][c].kana).join("")
+      ));
+    }
+
     // break safety loop just in case
-    if (safety > 200) break;
+    if (safety > 200) {
+      console.warn("Board generation safety limit reached, using current board");
+      break;
+    }
   } while (findWords(board, trie).length > 0 || !hasLegalMove(board, trie));
+
+  // Final check
+  const finalWords = findWords(board, trie);
+  if (finalWords.length > 0) {
+    console.error("Generated board still contains words:", finalWords.map(group =>
+      group.map(([r, c]) => board[r][c].kana).join("")
+    ));
+  }
+
   return board;
 }
 

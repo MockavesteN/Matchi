@@ -41,6 +41,14 @@ export default function Board({ rows, cols }: Props) {
   useEffect(() => {
     const init = generateBoard(rows, cols, kanaSetLevel1, trie);
     setBoard(init);
+
+    // Debug: Check for words on initial board
+    const wordsOnBoard = findWords(init, trie);
+    if (wordsOnBoard.length > 0) {
+      console.log("Words found on initial board:", wordsOnBoard.map(group =>
+        group.map(([r, c]) => init[r][c].kana).join("")
+      ));
+    }
   }, [rows, cols, trie]);
 
   const handleClick = (r: number, c: number) => {
@@ -122,11 +130,29 @@ export default function Board({ rows, cols }: Props) {
     setSelected(null);
   };
 
+  const debugCheckWords = () => {
+    const wordsOnBoard = findWords(board, trie);
+    console.log("Current words on board:", wordsOnBoard.map(group =>
+      group.map(([r, c]) => board[r][c].kana).join("")
+    ));
+    alert(`Found ${wordsOnBoard.length} words: ${wordsOnBoard.map(group =>
+      group.map(([r, c]) => board[r][c].kana).join("")
+    ).join(", ")}`);
+  };
+
   return (
     <>
       {foundWord && (
         <WordPopup info={foundWord} onClose={() => setFoundWord(null)} />
       )}
+      <div className="mb-4">
+        <button
+          onClick={debugCheckWords}
+          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Debug: Check for Words
+        </button>
+      </div>
       <div className="relative inline-block">
       <div
         className="inline-grid"
