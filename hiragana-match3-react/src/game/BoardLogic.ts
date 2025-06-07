@@ -2,12 +2,23 @@
 import TrieNode from "./Trie";
 import { Tile } from "../types";
 
+export const tileColors = [
+  "bg-pink-400",
+  "bg-yellow-300",
+  "bg-green-400",
+  "bg-blue-400",
+  "bg-purple-400",
+  "bg-orange-300",
+  "bg-red-400",
+];
+
 /**
  * Generate a random tile from kana set.
  */
 export function randomTile(kanaSet: string[], markNew = false): Tile {
   const kana = kanaSet[Math.floor(Math.random() * kanaSet.length)];
-  return { kana, id: crypto.randomUUID(), isNew: markNew };
+  const color = tileColors[Math.floor(Math.random() * tileColors.length)];
+  return { kana, id: crypto.randomUUID(), isNew: markNew, color };
 }
 
 /**

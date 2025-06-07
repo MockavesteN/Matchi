@@ -14,8 +14,8 @@ export default function Tile({ tile, onClick, selected }: Props) {
 
       initial={tile.isNew ? { y: -40, opacity: 0 } : false}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className={`tile w-12 h-12 m-0.5 bg-white hover:bg-yellow-100 transition ${selected ? "ring-4 ring-blue-400" : ""}`}
+      transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
+      className={`tile w-12 h-12 m-0.5 ${tile.color} text-white hover:brightness-110 transition ${selected ? "ring-4 ring-blue-400" : ""}`}
     >
       {tile.kana}
     </motion.div>
