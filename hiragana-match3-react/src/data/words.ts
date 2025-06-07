@@ -1,4 +1,3 @@
-
 /**
  * Very small word list for prototype/demo.
  * Replace with a larger JMdict-derived list for production.
