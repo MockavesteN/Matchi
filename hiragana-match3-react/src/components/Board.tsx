@@ -8,7 +8,10 @@ import {
   swap,
   findWords,
   collapseAndRefill,
-  hasLegalMove
+  hasLegalMove,
+  clearRow,
+  clearColumn,
+  clearKana
 } from "../game/BoardLogic";
 import { kanaSetLevel1 } from "../data/kanaSets";
 import { words, wordsMap, WordInfo } from "../data/words";
@@ -19,6 +22,7 @@ import { Tile as TileType } from "../types";
 interface Props {
   rows: number;
   cols: number;
+  mode: "learning" | "arcade";
 }
 
 interface Coord {
@@ -26,12 +30,26 @@ interface Coord {
   c: number;
 }
 
-export default function Board({ rows, cols }: Props) {
+export default function Board({ rows, cols, mode }: Props) {
   const [board, setBoard] = useState<TileType[][]>([]);
   const [selected, setSelected] = useState<Coord | null>(null);
   const [foundWord, setFoundWord] = useState<WordInfo | null>(null);
   const [overlay, setOverlay] = useState<{ word: string; meaning: string } | null>(null);
   const [pendingBoard, setPendingBoard] = useState<TileType[][] | null>(null);
+  const [matchCount, setMatchCount] = useState(0);
+  const [rowPower, setRowPower] = useState(false);
+  const [kanaPower, setKanaPower] = useState(false);
+
+  const triggerMatch = () => {
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 70, spread: 90, origin: { y: 0.6 } });
+    setMatchCount(c => c + 1);
+  };
+
+  useEffect(() => {
+    if (matchCount >= 5) setRowPower(true);
+    if (matchCount >= 10) setKanaPower(true);
+  }, [matchCount]);
 
   useEffect(() => {
     if (overlay) {
@@ -90,11 +108,6 @@ export default function Board({ rows, cols }: Props) {
 
     const matchedKana = matches
       .map(group => group.map(([gr, gc]) => newBoard[gr][gc].kana).join(""))[0];
-    if (matchedKana && wordsMap[matchedKana]) {
-      setFoundWord(wordsMap[matchedKana]);
-    } else {
-      setFoundWord(null);
-    }
 
     // Clear matches
 
@@ -132,9 +145,28 @@ export default function Board({ rows, cols }: Props) {
     const word = matches[0].map(([mr, mc]) => newBoard[mr][mc].kana).join("");
     const meaning = wordsMap[word]?.meaning || "";
 
-    setBoard(newBoard);
-    setPendingBoard(postBoard);
-    setOverlay({ word, meaning });
+    triggerMatch();
+
+    if (mode === "learning") {
+      if (matchedKana && wordsMap[matchedKana]) {
+        setFoundWord(wordsMap[matchedKana]);
+      } else {
+        setFoundWord(null);
+      }
+      setBoard(newBoard);
+      setPendingBoard(postBoard);
+      setOverlay({ word, meaning });
+    } else {
+      setBoard(postBoard);
+      setTimeout(
+        () =>
+          setBoard(prev =>
+            prev.map(row => row.map(t => ({ ...t, isNew: false })))
+          ),
+        300
+      );
+    }
+
     setSelected(null);
   };
 
@@ -148,9 +180,53 @@ export default function Board({ rows, cols }: Props) {
     ).join(", ")}`);
   };
 
+  const applyCascades = (b: TileType[][]) => {
+    let post = b;
+    let guard = 0;
+    while (guard < 10) {
+      const cascaded = findWords(post, trie);
+      if (cascaded.length === 0) break;
+      const clearCascade = Array.from({ length: rows }, () => Array(cols).fill(false));
+      for (const group of cascaded) {
+        for (const [gr, gc] of group) clearCascade[gr][gc] = true;
+      }
+      post = collapseAndRefill(post, clearCascade, kanaSetLevel1);
+      guard++;
+    }
+    if (!hasLegalMove(post, trie)) {
+      post = generateBoard(rows, cols, kanaSetLevel1, trie);
+    }
+    setBoard(post);
+  };
+
+  const handleRowPower = () => {
+    const rand = Math.floor(Math.random() * rows);
+    const newBoard = clearRow(board.map(row => row.map(t => ({ ...t }))), rand, kanaSetLevel1);
+    applyCascades(newBoard);
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+  };
+
+  const handleColumnPower = () => {
+    const rand = Math.floor(Math.random() * cols);
+    const newBoard = clearColumn(board.map(row => row.map(t => ({ ...t }))), rand, kanaSetLevel1);
+    applyCascades(newBoard);
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+  };
+
+  const handleKanaBomb = () => {
+    const flat = board.flat();
+    const randKana = flat[Math.floor(Math.random() * flat.length)].kana;
+    const newBoard = clearKana(board.map(row => row.map(t => ({ ...t }))), randKana, kanaSetLevel1);
+    applyCascades(newBoard);
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 80, spread: 120, origin: { y: 0.6 } });
+  };
+
   return (
     <>
-      {foundWord && (
+      {mode === "learning" && foundWord && (
         <WordPopup info={foundWord} onClose={() => setFoundWord(null)} />
       )}
       <div className="mb-4">
@@ -160,6 +236,32 @@ export default function Board({ rows, cols }: Props) {
         >
           Debug: Check for Words
         </button>
+      </div>
+      <div className="mb-4 flex gap-2 justify-center">
+        {rowPower && (
+          <>
+            <button
+              onClick={handleRowPower}
+              className="px-3 py-1 bg-green-500 text-white rounded text-sm"
+            >
+              Clear Row
+            </button>
+            <button
+              onClick={handleColumnPower}
+              className="px-3 py-1 bg-green-500 text-white rounded text-sm"
+            >
+              Clear Col
+            </button>
+          </>
+        )}
+        {kanaPower && (
+          <button
+            onClick={handleKanaBomb}
+            className="px-3 py-1 bg-purple-500 text-white rounded text-sm"
+          >
+            Kana Bomb
+          </button>
+        )}
       </div>
       <div className="relative inline-block">
       <div
@@ -179,7 +281,7 @@ export default function Board({ rows, cols }: Props) {
           ))
         )}
       </div>
-      {overlay && (
+      {mode === "learning" && overlay && (
         <MeaningOverlay
           word={overlay.word}
           meaning={overlay.meaning}
