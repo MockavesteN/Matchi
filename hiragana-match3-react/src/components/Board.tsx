@@ -110,7 +110,7 @@ export default function Board({ rows, cols }: Props) {
     <div
       className="inline-grid"
       style={{
-        gridTemplateColumns: \`repeat(\${cols}, 3.25rem)\`
+        gridTemplateColumns: `repeat(${cols}, 3.25rem)`
       }}
     >
       {board.map((row, r) =>
