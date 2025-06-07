@@ -11,6 +11,7 @@ export default function Tile({ tile, onClick, selected }: Props) {
   return (
     <motion.div
       onClick={onClick}
+
       initial={tile.isNew ? { y: -40, opacity: 0 } : false}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
