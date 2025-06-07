@@ -8,7 +8,10 @@ import {
   swap,
   findWords,
   collapseAndRefill,
-  hasLegalMove
+  hasLegalMove,
+  clearRow,
+  clearColumn,
+  clearKana
 } from "../game/BoardLogic";
 import { kanaSetLevel1 } from "../data/kanaSets";
 import { words, wordsMap, WordInfo } from "../data/words";
@@ -32,13 +35,22 @@ export default function Board({ rows, cols }: Props) {
   const [foundWord, setFoundWord] = useState<WordInfo | null>(null);
   const [overlay, setOverlay] = useState<{ word: string; meaning: string } | null>(null);
   const [pendingBoard, setPendingBoard] = useState<TileType[][] | null>(null);
+  const [matchCount, setMatchCount] = useState(0);
+  const [rowPower, setRowPower] = useState(false);
+  const [kanaPower, setKanaPower] = useState(false);
 
   useEffect(() => {
     if (overlay) {
       new Audio("/sounds/pon.mp3").play();
       confetti({ particleCount: 70, spread: 90, origin: { y: 0.6 } });
+      setMatchCount(c => c + 1);
     }
   }, [overlay]);
+
+  useEffect(() => {
+    if (matchCount >= 5) setRowPower(true);
+    if (matchCount >= 10) setKanaPower(true);
+  }, [matchCount]);
 
   const [trie] = useState<TrieNode>(() => {
     const t = new TrieNode();
@@ -148,6 +160,50 @@ export default function Board({ rows, cols }: Props) {
     ).join(", ")}`);
   };
 
+  const applyCascades = (b: TileType[][]) => {
+    let post = b;
+    let guard = 0;
+    while (guard < 10) {
+      const cascaded = findWords(post, trie);
+      if (cascaded.length === 0) break;
+      const clearCascade = Array.from({ length: rows }, () => Array(cols).fill(false));
+      for (const group of cascaded) {
+        for (const [gr, gc] of group) clearCascade[gr][gc] = true;
+      }
+      post = collapseAndRefill(post, clearCascade, kanaSetLevel1);
+      guard++;
+    }
+    if (!hasLegalMove(post, trie)) {
+      post = generateBoard(rows, cols, kanaSetLevel1, trie);
+    }
+    setBoard(post);
+  };
+
+  const handleRowPower = () => {
+    const rand = Math.floor(Math.random() * rows);
+    const newBoard = clearRow(board.map(row => row.map(t => ({ ...t }))), rand, kanaSetLevel1);
+    applyCascades(newBoard);
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+  };
+
+  const handleColumnPower = () => {
+    const rand = Math.floor(Math.random() * cols);
+    const newBoard = clearColumn(board.map(row => row.map(t => ({ ...t }))), rand, kanaSetLevel1);
+    applyCascades(newBoard);
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 50, spread: 80, origin: { y: 0.6 } });
+  };
+
+  const handleKanaBomb = () => {
+    const flat = board.flat();
+    const randKana = flat[Math.floor(Math.random() * flat.length)].kana;
+    const newBoard = clearKana(board.map(row => row.map(t => ({ ...t }))), randKana, kanaSetLevel1);
+    applyCascades(newBoard);
+    new Audio("/sounds/pon.mp3").play();
+    confetti({ particleCount: 80, spread: 120, origin: { y: 0.6 } });
+  };
+
   return (
     <>
       {foundWord && (
@@ -160,6 +216,32 @@ export default function Board({ rows, cols }: Props) {
         >
           Debug: Check for Words
         </button>
+      </div>
+      <div className="mb-4 flex gap-2 justify-center">
+        {rowPower && (
+          <>
+            <button
+              onClick={handleRowPower}
+              className="px-3 py-1 bg-green-500 text-white rounded text-sm"
+            >
+              Clear Row
+            </button>
+            <button
+              onClick={handleColumnPower}
+              className="px-3 py-1 bg-green-500 text-white rounded text-sm"
+            >
+              Clear Col
+            </button>
+          </>
+        )}
+        {kanaPower && (
+          <button
+            onClick={handleKanaBomb}
+            className="px-3 py-1 bg-purple-500 text-white rounded text-sm"
+          >
+            Kana Bomb
+          </button>
+        )}
       </div>
       <div className="relative inline-block">
       <div

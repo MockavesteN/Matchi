@@ -203,3 +203,46 @@ export function collapseAndRefill(
   }
   return board;
 }
+
+/** Clear a specific row and refill */
+export function clearRow(
+  board: Tile[][],
+  row: number,
+  kanaSet: string[]
+): Tile[][] {
+  const rows = board.length;
+  const cols = board[0].length;
+  const cleared = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let c = 0; c < cols; c++) cleared[row][c] = true;
+  return collapseAndRefill(board, cleared, kanaSet);
+}
+
+/** Clear a specific column and refill */
+export function clearColumn(
+  board: Tile[][],
+  col: number,
+  kanaSet: string[]
+): Tile[][] {
+  const rows = board.length;
+  const cols = board[0].length;
+  const cleared = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let r = 0; r < rows; r++) cleared[r][col] = true;
+  return collapseAndRefill(board, cleared, kanaSet);
+}
+
+/** Clear all tiles containing the given kana and refill */
+export function clearKana(
+  board: Tile[][],
+  kana: string,
+  kanaSet: string[]
+): Tile[][] {
+  const rows = board.length;
+  const cols = board[0].length;
+  const cleared = Array.from({ length: rows }, () => Array(cols).fill(false));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c].kana === kana) cleared[r][c] = true;
+    }
+  }
+  return collapseAndRefill(board, cleared, kanaSet);
+}
