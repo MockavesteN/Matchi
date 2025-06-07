@@ -5,9 +5,9 @@ import { Tile } from "../types";
 /**
  * Generate a random tile from kana set.
  */
-export function randomTile(kanaSet: string[]): Tile {
+export function randomTile(kanaSet: string[], markNew = false): Tile {
   const kana = kanaSet[Math.floor(Math.random() * kanaSet.length)];
-  return { kana, id: crypto.randomUUID() };
+  return { kana, id: crypto.randomUUID(), isNew: markNew };
 }
 
 /**
@@ -163,7 +163,7 @@ export function collapseAndRefill(
     }
     // add new tiles on top
     while (column.length < rows) {
-      column.unshift(randomTile(kanaSet));
+      column.unshift(randomTile(kanaSet, true));
     }
     // write back
     for (let r = 0; r < rows; r++) {
